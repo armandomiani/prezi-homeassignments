@@ -1,0 +1,42 @@
+image: docker:latest
+services:
+  - docker:dind
+
+variables:
+  DOCKER_DRIVER: "overlay"
+  API_PORT: "9090"
+  WORKERS: "4"
+
+stages:
+  - package
+  - deploy
+
+docker-build-api:
+  stage: package
+  script:
+  - docker build -t registry.gitlab.com/prezi-homeassignments/armando.miani-devops/prezi-api api/
+  - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
+  - docker push registry.gitlab.com/prezi-homeassignments/armando.miani-devops/prezi-api
+
+docker-build-dbseed:
+  stage: package
+  script:
+  - docker build -t registry.gitlab.com/prezi-homeassignments/armando.miani-devops/prezi-dbseed dbseed/
+  - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
+  - docker push registry.gitlab.com/prezi-homeassignments/armando.miani-devops/prezi-dbseed
+
+deploy:
+  image: google/cloud-sdk
+  stage: deploy
+  script:
+  - echo "$GOOGLE_KEY" > key.json
+  - gcloud auth activate-service-account --key-file key.json
+  - gcloud config set compute/zone europe-west1-c
+  - gcloud config set project prezi-exam
+  - gcloud config set container/use_client_certificate True
+  - gcloud container clusters get-credentials prezi-cluster
+  - set +e
+  - kubectl delete secret registry.gitlab.com
+  - set -e
+  - kubectl create secret docker-registry registry.gitlab.com --docker-server=https://registry.gitlab.com --docker-username=hobsdev --docker-password=$REGISTRY_PASSWD --docker-email=hostmaster@hobs.com.br
+  - kubectl apply -f deployment.yaml

@@ -1,0 +1,10 @@
+[uwsgi]
+socket = /tmp/uwsgi.sock
+chown-socket = www-data:www-data
+chmod-socket = 664
+
+# set the min number of workers
+cheaper = ${WORKERS}
+
+processes = 16
+py-autoreload = 3

@@ -1,0 +1,50 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: prezi-cluster
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: prezi-exam
+    spec:
+      containers:
+      - name: prezi-api
+        image: registry.gitlab.com/prezi-homeassignments/armando.miani-devops/prezi-api        
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9090
+        env:
+          - name: API_PORT
+            value: "9090"
+          - name: API_DB_HOST
+            value: "localhost"
+          - name: WORKERS
+            value: "1"
+        resources:
+          requests:
+            cpu: "200m"
+      - name: prezi-db
+        image: mongo:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 27017
+        resources:
+          requests:
+            cpu: "10m"
+          limits:
+            cpu: "10m"
+      - name: prezi-dbseed
+        image: registry.gitlab.com/prezi-homeassignments/armando.miani-devops/prezi-dbseed
+        imagePullPolicy: Always
+        env:
+          - name: DB_HOST
+            value: "localhost"        
+        resources:
+          requests:
+            cpu: "10m"
+          limits:
+            cpu: "10m"
+      imagePullSecrets:
+        - name: registry.gitlab.com

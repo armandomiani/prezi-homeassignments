@@ -1,0 +1,35 @@
+version: '2'
+services:
+  api:
+    build: api/.
+    image: prezi/api:dev
+    container_name: prezi-api
+    ports:
+      - 9090:9090
+    environment:
+      API_PORT: 9090
+      WORKERS: 4
+      API_DB_HOST: db
+    volumes:
+      - ./api/src:/api/src
+    depends_on:
+      - db
+    links:
+      - db:db
+
+  db:
+    image: mongo:latest
+    container_name: prezi-db
+    ports:
+      - 27017:27017
+
+  dbseed:
+    build: dbseed/.
+    image: prezi/dbseed:dev
+    environment:
+      DB_HOST: db
+    depends_on:
+      - db
+    links:
+      - db:db
+
